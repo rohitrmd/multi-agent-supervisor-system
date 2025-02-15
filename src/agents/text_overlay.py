@@ -1,14 +1,19 @@
-from typing import Dict
+from typing import Dict, Literal
+from langgraph.types import Command
 from ..types.state import AgentState
 
 def create_text_overlay_agent():
-    def text_overlay_agent(state: AgentState) -> Dict:
+    def text_overlay_agent(state: AgentState) -> Command[Literal["supervisor"]]:
         print("\n✍️ Text Overlay Agent: Processing request...")
         
-        # Update state with mock image URL and add a message
-        new_state = state.copy()
-        new_state["processed_image_url"] = "mock_text_overlay_image.jpg"
-        new_state["messages"].append({"role": "system", "content": "Text Overlay Agent: Added text to image"})
-        
-        return {"state": new_state}
+        return Command(
+            goto="supervisor",
+            update={
+                "processed_image_url": "mock_text_overlay_image.jpg",
+                "messages": state["messages"] + [
+                    {"role": "system", "content": "Text Overlay Agent: Added text to image"}
+                ]
+            }
+        )
+    
     return text_overlay_agent 

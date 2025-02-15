@@ -1,15 +1,14 @@
-from typing import Dict
-from langchain_openai import ChatOpenAI
+from typing import Dict, Literal
+from langgraph.types import Command
 from ..types.state import AgentState
 from ..config.settings import SUPERVISOR_MODEL, SUPERVISOR_TEMPERATURE
 
 def create_supervisor_agent():
-    def supervisor_agent(state: AgentState) -> Dict:
+    def supervisor_agent(state: AgentState) -> Command[Literal["image_generation", "text_overlay", "background_removal", "__end__"]]:
         print("\n🎯 Supervisor Agent: Deciding next task...")
         
         # Simple round-robin task assignment for demonstration
         current_task = state["current_task"]
-        new_state = state.copy()
         
         if current_task is None:
             next_agent = "image_generation"
@@ -18,13 +17,17 @@ def create_supervisor_agent():
         elif current_task == "text_overlay":
             next_agent = "background_removal"
         else:
-            next_agent = None  # This will end the workflow
+            next_agent = "__end__"  # Using END constant
         
-        new_state["next_agent"] = next_agent
-        new_state["current_task"] = next_agent
-        new_state["messages"].append({"role": "system", "content": f"Supervisor: Routing to {next_agent if next_agent else 'END'}"})
+        print(f"➡️ Next agent: {next_agent}")
         
-        print(f"➡️ Next agent: {next_agent if next_agent else 'END'}")
-        return {"next_agent": next_agent, "state": new_state}
+        return Command(
+            goto=next_agent,
+            update={
+                "next_agent": next_agent,
+                "current_task": next_agent,
+                "messages": state["messages"] + [{"role": "system", "content": f"Supervisor: Routing to {next_agent}"}]
+            }
+        )
     
     return supervisor_agent 
