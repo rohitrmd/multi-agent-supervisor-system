@@ -4,24 +4,27 @@ from ..types.state import AgentState
 from ..config.settings import SUPERVISOR_MODEL, SUPERVISOR_TEMPERATURE
 
 def create_supervisor_agent():
-    llm = ChatOpenAI(
-        model=SUPERVISOR_MODEL,
-        temperature=SUPERVISOR_TEMPERATURE
-    )
-    
-    prompt = """You are a supervisor agent that coordinates image processing tasks.
-    Based on the request, determine which tasks need to be executed in sequence.
-    Available tasks:
-    - image_generation: Generates new images
-    - text_overlay: Adds text to images
-    - background_removal: Removes background from images
-    
-    Respond with the next task to execute or 'FINISH' if all tasks are complete.
-    Current state of the image and previous tasks will be provided.
-    """
-    
     def supervisor_agent(state: AgentState) -> Dict:
-        # Implementation coming soon
-        return {"next_agent": "image_generation", "state": state}
+        print("\n🎯 Supervisor Agent: Deciding next task...")
+        
+        # Simple round-robin task assignment for demonstration
+        current_task = state["current_task"]
+        new_state = state.copy()
+        
+        if current_task is None:
+            next_agent = "image_generation"
+        elif current_task == "image_generation":
+            next_agent = "text_overlay"
+        elif current_task == "text_overlay":
+            next_agent = "background_removal"
+        else:
+            next_agent = None  # This will end the workflow
+        
+        new_state["next_agent"] = next_agent
+        new_state["current_task"] = next_agent
+        new_state["messages"].append({"role": "system", "content": f"Supervisor: Routing to {next_agent if next_agent else 'END'}"})
+        
+        print(f"➡️ Next agent: {next_agent if next_agent else 'END'}")
+        return {"next_agent": next_agent, "state": new_state}
     
     return supervisor_agent 
