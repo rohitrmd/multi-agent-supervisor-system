@@ -1,6 +1,6 @@
 from typing import Dict, Literal
 from langgraph.types import Command
-from ..types.state import AgentState
+from ..agent_types.state import AgentState
 
 def create_text_overlay_agent():
     def text_overlay_agent(state: AgentState) -> Command[Literal["supervisor"]]:

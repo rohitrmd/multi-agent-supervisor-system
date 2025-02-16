@@ -1,6 +1,6 @@
 from typing import Dict, Literal
 from langgraph.types import Command
-from ..types.state import AgentState
+from ..agent_types.state import AgentState
 
 def create_background_removal_agent():
     def background_removal_agent(state: AgentState) -> Command[Literal["supervisor"]]:

@@ -1,6 +1,6 @@
 from typing import Dict, Literal
 from langgraph.types import Command
-from ..types.state import AgentState
+from ..agent_types.state import AgentState
 
 def create_image_generation_agent():
     def image_generation_agent(state: AgentState) -> Command[Literal["supervisor"]]:

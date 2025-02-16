@@ -2,7 +2,9 @@ from typing import Literal
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from langgraph.types import Command
-from ..types.state import AgentState
+
+# Simplified imports without src
+from ..agent_types.state import AgentState
 from ..config.settings import SUPERVISOR_MODEL, SUPERVISOR_TEMPERATURE
 
 def create_supervisor_agent():
@@ -12,7 +14,7 @@ def create_supervisor_agent():
     )
     
     system_prompt = """You are a supervisor agent coordinating image processing tasks.
-    Based on the user's request, determine which task should be executed next.
+    Based on the user's request and current state, determine which task should be executed next.
     
     Available tasks:
     1. image_generation - When user needs to create a new image
@@ -20,32 +22,31 @@ def create_supervisor_agent():
     3. background_removal - When background needs to be removed from an image
     
     Rules:
+    - Process tasks in sequence until all requested operations are complete
     - If the request mentions creating/generating an image, start with 'image_generation'
-    - If the request mentions adding text/caption, use 'text_overlay'
+    - After image generation, if text/caption is requested, use 'text_overlay'
     - If the request mentions removing/deleting background, use 'background_removal'
-    - If all requested tasks are complete, respond with '__end__'
-    - Always process one task at a time in logical order
+    - Only respond with '__end__' when all requested tasks are complete
+    - Consider both the original request and the current task state when deciding the next task
     
-    Respond with the next task to execute based on the current state and user request.
+    Example sequences:
+    - "Generate an image and add text" → image_generation → text_overlay → __end__
+    - "Create an image, remove background, add text" → image_generation → background_removal → text_overlay → __end__
     """
 
     def supervisor_agent(state: AgentState) -> Command[Literal["image_generation", "text_overlay", "background_removal", "__end__"]]:
         print("\n🎯 Supervisor Agent: Deciding next task...")
         
         # Get the initial request if this is the first run
-        if len(state["messages"]) == 1:
-            user_request = state["messages"][0].content
-        else:
-            # Get the last message to see what was just completed
-            user_request = state["messages"][-1].content
-
+        messages = state["messages"]
+        user_request = messages[0]["content"] if isinstance(messages[0], dict) else messages[0].content
+        
         # Use LLM to decide next task
         messages = [
             SystemMessage(content=system_prompt),
             HumanMessage(content=f"""
-            User Request: {state["messages"][0].content}
+            Original Request: {user_request}
             Current Task: {state["current_task"]}
-            Previous Tasks Completed: {[msg.content for msg in state["messages"] if msg.name in ["image_generation", "text_overlay", "background_removal"]]}
             
             What should be the next task?
             """)
@@ -71,7 +72,7 @@ def create_supervisor_agent():
                 "next_agent": next_agent,
                 "current_task": next_agent,
                 "messages": state["messages"] + [
-                    SystemMessage(content=f"Supervisor: Routing to {next_agent}")
+                    {"role": "system", "content": f"Supervisor: Routing to {next_agent}"}
                 ]
             }
         )
