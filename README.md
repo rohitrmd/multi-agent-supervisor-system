@@ -51,3 +51,80 @@ This project implements a multi-agent system based on LangGraph's Agent-Supervis
 ## Setup
 
 1. Create a virtual environment:
+
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+2. Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+3. Create a `.env` file with your OpenAI API key:
+
+```
+OPENAI_API_KEY=your-key-here
+```
+
+## Running the System
+
+From the project root directory, run:
+
+```bash
+python -m src.main
+```
+
+Example inputs to try:
+- "Generate an image of a sunset and add text 'Beautiful Evening' to it"
+- "Create an image of a mountain landscape and remove its background"
+- "Generate an image of a cat with 'Hello' text"
+
+The system will:
+1. Take your input
+2. Use the supervisor to determine the sequence of tasks
+3. Route the request through appropriate agents
+4. Show the execution path and final result
+
+## Project Structure
+
+```
+image_processing_agents/
+├── src/
+│   ├── agents/
+│   │   ├── supervisor.py      # Supervisor agent implementation
+│   │   ├── image_generation.py
+│   │   ├── text_overlay.py
+│   │   └── background_removal.py
+│   ├── agent_types/
+│   │   └── state.py          # State type definitions
+│   ├── config/
+│   │   └── settings.py       # Configuration settings
+│   └── main.py              # Main execution script
+├── .env                     # Environment variables
+├── .gitignore
+└── requirements.txt
+```
+
+## Implementation Details
+
+1. **State Management**
+   - Uses TypedDict for type-safe state management
+   - Tracks messages, current task, and image URLs
+   - Maintains execution history
+
+2. **Agent Communication**
+   - Agents communicate through state updates
+   - Each agent adds its actions to the message history
+   - Supervisor makes decisions based on complete context
+
+3. **Routing Logic**
+   - Supervisor analyzes both original request and current state
+   - Makes sequential decisions about task execution
+   - Uses LLM to understand complex requests
+
+## Based On
+This implementation follows the LangGraph Agent-Supervisor tutorial:
+[LangGraph Multi-Agent Tutorial](https://langchain-ai.github.io/langgraph/tutorials/multi_agent/agent_supervisor/)
