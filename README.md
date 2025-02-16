@@ -8,6 +8,10 @@ This project implements a multi-agent system based on LangGraph's Agent-Supervis
 
 ### System Architecture
 
+![Workflow Graph](workflow_graph.png)
+
+The system consists of:
+
 1. **Supervisor Agent**
    - Coordinates the workflow
    - Makes intelligent decisions about task sequencing
@@ -17,6 +21,12 @@ This project implements a multi-agent system based on LangGraph's Agent-Supervis
    - Image Generation Agent: Handles image creation requests
    - Text Overlay Agent: Adds text to images
    - Background Removal Agent: Removes image backgrounds
+
+The graph visualization above shows:
+- The initial entry point (START) connecting to the Supervisor
+- The Supervisor node which coordinates all task agents
+- Task agent nodes for specific image processing operations
+- The potential paths through the system based on user requests
 
 ### Key LangGraph Features Used
 

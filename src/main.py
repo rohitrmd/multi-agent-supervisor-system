@@ -2,6 +2,7 @@ from langgraph.graph import StateGraph, START
 from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 import os
+from langchain_core.runnables.graph import MermaidDrawMethod
 
 # Use relative imports (note the . before agents)
 from .agents.supervisor import create_supervisor_agent
@@ -23,7 +24,19 @@ def create_workflow():
     # Add starting edge
     builder.add_edge(START, "supervisor")
 
-    return builder.compile()
+    graph = builder.compile()
+    
+    # Generate and save the graph visualization
+    graph_png = graph.get_graph().draw_mermaid_png(
+        draw_method=MermaidDrawMethod.API
+    )
+    
+    with open("workflow_graph.png", "wb") as f:
+        f.write(graph_png)
+    
+    print("\n📊 Graph visualization saved as 'workflow_graph.png'")
+    
+    return graph
 
 def main():
     # Load environment variables
