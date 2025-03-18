@@ -1,6 +1,7 @@
 from typing import Dict
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_openai import ChatOpenAI
+from langsmith.schemas import Run, Example
 import json
 
 # Initialize judge LLM
@@ -9,18 +10,22 @@ judge_llm = ChatOpenAI(
     temperature=0
 )
 
-async def evaluate_task_completion(run, example) -> Dict:
+async def evaluate_task_completion(run: Run, example: Example) -> Dict:
     """
     Uses GPT-4 to evaluate if the workflow completed the requested tasks correctly.
+    
+    Args:
+        run: Execution trace containing actual outputs
+        example: Test case containing expected behavior
     """
     try:
-        # Extract actual sequence and messages
+        # Extract actual sequence from run outputs
         actual_sequence = [
             msg["content"] for msg in run.outputs["messages"] 
             if msg.get("role") == "system" and "Agent:" in msg.get("content", "")
         ]
         
-        # Get expected sequence
+        # Get expected sequence from example
         expected_sequence = example.outputs["expected_sequence"]
         
         # Prepare instructions for the judge
@@ -38,6 +43,8 @@ async def evaluate_task_completion(run, example) -> Dict:
         
         # Prepare the comparison message
         comparison_msg = f"""
+        Original Request: {run.inputs.get('request', 'No request found')}
+        
         EXPECTED SEQUENCE:
         {json.dumps(expected_sequence, indent=2)}
         
@@ -55,20 +62,10 @@ async def evaluate_task_completion(run, example) -> Dict:
         
         # Parse the response
         is_correct = response.content.upper().startswith("CORRECT")
-        explanation = response.content.split("\n", 1)[1] if "\n" in response.content else ""
         
         return {
             "score": 1.0 if is_correct else 0.0,
-            "reasoning": f"""
-                Judge's Evaluation:
-                {response.content}
-
-                Expected Sequence:
-                {json.dumps(expected_sequence, indent=2)}
-
-                Actual Sequence:
-                {json.dumps(actual_sequence, indent=2)}
-            """
+            "reasoning": response.content
         }
         
     except Exception as e:
@@ -77,51 +74,48 @@ async def evaluate_task_completion(run, example) -> Dict:
             "reasoning": f"Error during evaluation: {str(e)}"
         }
 
-async def check_node_execution(run, example) -> Dict:
+async def check_node_execution(run: Run, example: Example) -> Dict:
     """
     Uses GPT-4 to evaluate if the correct nodes/agents were executed in the workflow.
     """
     try:
-        # Initialize the judge LLM
         judge_llm = ChatOpenAI(model="gpt-4", temperature=0)
         
-        # Extract all agent messages
+        # Extract agent messages and their sequence
         agent_messages = [
             msg["content"] for msg in run.outputs["messages"] 
             if msg.get("role") == "system" and "Agent:" in msg.get("content", "")
         ]
         
-        # Extract unique agent names from messages
-        executed_agents = set(
+        # Extract agent sequence from messages
+        agent_sequence = [
             msg.split("Agent:")[0].strip() 
-            for msg in agent_messages 
-            if "Agent:" in msg
-        )
+            for msg in agent_messages
+        ]
         
-        # Prepare instructions for the judge
         instructions = """
-        You are an evaluation judge analyzing workflow execution. Given the sequence of agent actions 
-        and the expected workflow steps, determine if:
+        You are an evaluation judge analyzing workflow execution. Given the sequence of agent actions,
+        determine if:
         
-        1. All necessary agents were involved
-        2. No unexpected agents were used
-        3. The agents executed their tasks appropriately
+        1. All necessary agents were involved based on the request
+        2. The agents executed their tasks in the correct order
+        3. The sequence makes logical sense for the task
         
-        Respond with either 'CORRECT' or 'INCORRECT', followed by a brief analysis of the agent execution.
+        Respond with either 'CORRECT' or 'INCORRECT', followed by a brief analysis.
         """
         
-        # Prepare the comparison message
         comparison_msg = f"""
+        Original Request: {run.inputs.get('request', 'No request found')}
+        
         EXPECTED WORKFLOW:
         {json.dumps(example.outputs["expected_sequence"], indent=2)}
         
-        ACTUAL AGENT EXECUTIONS:
+        ACTUAL EXECUTIONS:
         {json.dumps(agent_messages, indent=2)}
         
-        Agents Involved: {", ".join(executed_agents)}
+        Agent Sequence: {json.dumps(agent_sequence, indent=2)}
         """
         
-        # Get judge's evaluation
         response = await judge_llm.ainvoke(
             [
                 {"role": "system", "content": instructions},
@@ -129,22 +123,11 @@ async def check_node_execution(run, example) -> Dict:
             ]
         )
         
-        # Parse the response
         is_correct = response.content.upper().startswith("CORRECT")
-        explanation = response.content.split("\n", 1)[1] if "\n" in response.content else ""
         
         return {
             "score": 1.0 if is_correct else 0.0,
-            "reasoning": f"""
-                Judge's Analysis:
-                {response.content}
-
-                Agents Involved:
-                {json.dumps(list(executed_agents), indent=2)}
-
-                Full Execution Sequence:
-                {json.dumps(agent_messages, indent=2)}
-            """
+            "reasoning": response.content
         }
         
     except Exception as e:
