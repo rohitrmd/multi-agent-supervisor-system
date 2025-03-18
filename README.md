@@ -98,6 +98,12 @@ The system will:
 3. Route the request through appropriate agents
 4. Show the execution path and final result
 
+## Evaluation Framework
+
+The system includes an evaluation framework to assess the performance and correctness of the multi-agent workflow. 
+
+For detailed information about the evaluation framework, see [Evaluation Documentation](src/evaluation/README.md).
+
 ## Project Structure
 
 ```
@@ -108,6 +114,10 @@ image_processing_agents/
 │   │   ├── image_generation.py
 │   │   ├── text_overlay.py
 │   │   └── background_removal.py
+│   ├── evaluation/          # Evaluation framework
+│   │   ├── evaluators.py    # Evaluation functions
+│   │   ├── create_dataset.py # Test dataset creation
+│   │   └── run_evaluation.py # Main evaluation script
 │   ├── agent_types/
 │   │   └── state.py          # State type definitions
 │   ├── config/
@@ -138,3 +148,24 @@ image_processing_agents/
 ## Based On
 This implementation follows the LangGraph Agent-Supervisor tutorial:
 [LangGraph Multi-Agent Tutorial](https://langchain-ai.github.io/langgraph/tutorials/multi_agent/agent_supervisor/)
+
+### Evaluation Components
+
+1. **Test Dataset**
+   - Predefined test cases with expected outcomes
+   - Stored in LangSmith for tracking and analysis
+
+2. **LLM Judge (GPT-4)**
+   - Evaluates task completion accuracy
+   - Analyzes agent execution patterns
+   - Provides detailed reasoning for scores
+
+3. **Metrics**
+   - Task Completion Score (0.0 - 1.0)
+   - Node Execution Score (0.0 - 1.0)
+   - Execution Time
+
+4. **Results Storage**
+   - Evaluation results are stored in LangSmith
+   - Detailed logs of agent interactions
+   - Performance metrics and analysis
