@@ -136,27 +136,49 @@ async def check_node_execution(run: Run, example: Example) -> Dict:
             "reasoning": f"Error during evaluation: {str(e)}"
         }
 
-async def check_state_transitions(run, example) -> Dict:
+
+async def check_image_generation_node(run: Run, example: Example) -> Dict:
     """
-    Analyzes the state transitions between agents.
+    Evaluates if the image generation node was called.
     """
     try:
-        transitions = []
-        current_task = None
+        judge_llm = ChatOpenAI(model="gpt-4", temperature=0)
         
-        for msg in run.outputs.get("messages", []):
-            if isinstance(msg, dict) and msg.get("role") == "system" and "Agent:" in msg.get("content", ""):
-                new_task = msg["content"].split("Agent:")[0].strip()
-                if current_task:
-                    transitions.append(f"{current_task} -> {new_task}")
-                current_task = new_task
+        # Extract messages specifically from Image Generation Agent
+        image_gen_messages = [
+            msg["content"] for msg in run.outputs.get("messages", [])
+            if msg.get("role") == "system" and "Image Generation Agent:" in msg.get("content", "")
+        ]
+        
+        instructions = """
+        You are an evaluation judge. Your only task is to check if the Image Generation Agent was called.
+        
+        Respond with:
+        - 'CORRECT' if you see any messages from the Image Generation Agent
+        - 'INCORRECT' if there are no messages from the Image Generation Agent
+        """
+        
+        comparison_msg = f"""
+        Messages from Image Generation Agent:
+        {json.dumps(image_gen_messages, indent=2)}
+        """
+        
+        response = await judge_llm.ainvoke(
+            [
+                {"role": "system", "content": instructions},
+                {"role": "user", "content": comparison_msg}
+            ]
+        )
+        
+        is_correct = response.content.upper().startswith("CORRECT")
         
         return {
-            "score": float(len(transitions) > 0),
-            "reasoning": f"State transitions: {transitions}"
+            "score": 1.0 if is_correct else 0.0,
+            "reasoning": response.content
         }
+        
     except Exception as e:
         return {
             "score": 0.0,
-            "reasoning": f"Error in evaluation: {str(e)}"
+            "reasoning": f"Error during evaluation: {str(e)}"
         } 
