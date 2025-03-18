@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 
 from ..main import create_workflow
-from .evaluators import evaluate_task_completion
+from .evaluators import evaluate_task_completion, check_node_execution
 from .create_dataset import create_evaluation_dataset
 
 async def run_evaluations():
@@ -52,13 +52,17 @@ async def run_evaluations():
     print("✓ Evaluation target configured")
     
     # Step 5: Run Evaluation
-    print("\n5️⃣ Running evaluation...")
+    print("\n5️⃣ Running evaluations...")
     print("   • Executing workflow")
     print("   • Checking task completion")
+    print("   • Analyzing node execution")
     experiment_results = await client.aevaluate(
         target,
         data=dataset.name,
-        evaluators=[evaluate_task_completion],
+        evaluators=[
+            evaluate_task_completion,
+            check_node_execution
+        ],
         experiment_prefix="image_processing_eval",
         num_repetitions=1,
         max_concurrency=1
@@ -69,6 +73,15 @@ async def run_evaluations():
     print("\n6️⃣ Processing results...")
     results_df = experiment_results.to_pandas()
     
+    # Debug: Print available columns
+    print("\nAvailable columns in DataFrame:")
+    print(results_df.columns.tolist())
+    
+    # Debug: Print raw DataFrame
+    print("\nRaw DataFrame content:")
+    print(results_df)
+    
+    # Create results dictionary with error handling
     results_dict = {
         "Test Request": {
             "input": results_df['inputs.request'].iloc[0],
@@ -84,7 +97,15 @@ async def run_evaluations():
             }
         },
         "Evaluation": {
-            "task_completion_score": float(results_df['feedback.evaluate_task_completion'].iloc[0]),
+            "task_completion": {
+                "score": float(results_df['feedback.evaluate_task_completion'].iloc[0]),
+                # The column name might be different, let's check the actual columns first
+                "reasoning": str(results_df['feedback.evaluate_task_completion'].iloc[0])
+            },
+            "node_execution": {
+                "score": float(results_df['feedback.check_node_execution'].iloc[0]),
+                "reasoning": str(results_df['feedback.check_node_execution'].iloc[0])
+            },
             "execution_time_seconds": float(results_df['execution_time'].iloc[0])
         }
     }
@@ -92,16 +113,24 @@ async def run_evaluations():
     # Step 7: Display Results
     print("\n7️⃣ Evaluation Results")
     print("===================")
-    print("\nDetailed Results:")
-    print(json.dumps(results_dict, indent=2, ensure_ascii=False))
+    
+    print("\n📋 Task Completion Evaluation:")
+    print(f"Score: {results_dict['Evaluation']['task_completion']['score']}")
+    print("Reasoning:")
+    print(results_dict['Evaluation']['task_completion']['reasoning'])
+    
+    print("\n🔍 Node Execution Analysis:")
+    print(f"Score: {results_dict['Evaluation']['node_execution']['score']}")
+    print("Reasoning:")
+    print(results_dict['Evaluation']['node_execution']['reasoning'])
     
     # Step 8: Summary
     print("\n8️⃣ Quick Summary")
     print("===============")
     print(f"• Request: {results_dict['Test Request']['input']}")
-    print(f"• Task Completion Score: {results_dict['Evaluation']['task_completion_score']}")
+    print(f"• Task Completion Score: {results_dict['Evaluation']['task_completion']['score']}")
+    print(f"• Node Execution Score: {results_dict['Evaluation']['node_execution']['score']}")
     print(f"• Execution Time: {results_dict['Evaluation']['execution_time_seconds']:.2f} seconds")
-    print(f"• Final State: {results_dict['Execution Results']['final_state']['next_agent']}")
     
     return experiment_results
 
