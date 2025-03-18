@@ -56,11 +56,13 @@ async def run_evaluations():
     print("✓ Evaluation target configured")
     
     # Step 5: Run Evaluation
-    print("\n5️⃣ Running evaluations...")
-    print("   • Executing workflow")
-    print("   • Checking task completion")
-    print("   • Analyzing node execution")
-    print("   • Evaluating image generation")
+    print("\n5️⃣ Running Multi-Agent System Evaluation")
+    print("=====================================")
+    print("Evaluating three key criteria:")
+    print("1. Task Completion: Overall system performance")
+    print("2. Node Execution: Agent interaction patterns")
+    print("3. Individual Nodes: Specific agent performance")
+    
     experiment_results = await client.aevaluate(
         target,
         data=dataset.name,
@@ -111,22 +113,25 @@ async def run_evaluations():
     }
     
     # Step 7: Display Results
-    print("\n7️⃣ Evaluation Results")
-    print("===================")
+    print("\n7️⃣ Evaluation Results by Criteria")
+    print("==============================")
     
-    print("\n📋 Task Completion Evaluation:")
+    print("\n1️⃣ Task Completion Evaluation:")
+    print("   Overall system performance score")
     print(f"Score: {results_dict['Evaluation']['task_completion']['score']}")
-    print("Reasoning:")
+    print("Analysis:")
     print(results_dict['Evaluation']['task_completion']['reasoning'])
     
-    print("\n🔍 Node Execution Analysis:")
+    print("\n2️⃣ Node Execution Analysis:")
+    print("   Agent interaction patterns score")
     print(f"Score: {results_dict['Evaluation']['node_execution']['score']}")
-    print("Reasoning:")
+    print("Analysis:")
     print(results_dict['Evaluation']['node_execution']['reasoning'])
     
-    print("\n🎨 Image Generation Evaluation:")
+    print("\n3️⃣ Image Generation Node Check:")
+    print("   Individual node performance score")
     print(f"Score: {results_dict['Evaluation']['image_generation']['score']}")
-    print("Reasoning:")
+    print("Analysis:")
     print(results_dict['Evaluation']['image_generation']['reasoning'])
     
     # Step 8: Summary

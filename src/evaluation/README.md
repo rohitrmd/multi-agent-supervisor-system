@@ -1,6 +1,26 @@
-# Evaluation Framework
+# Multi-Agent System Evaluation Framework
 
-This framework assesses the performance and correctness of the multi-agent workflow using GPT-4 as a judge.
+This framework implements a comprehensive evaluation strategy for multi-agent systems using three distinct criteria.
+
+## Evaluation Criteria
+
+### 1. Task Completion Evaluation
+Assesses if the entire multi-agent system successfully completed all requested tasks.
+- Verifies all required tasks were completed
+- Checks task execution order
+- Validates final output against requirements
+
+### 2. Node Execution Path Analysis
+Examines the interaction patterns and execution sequence of agents.
+- Confirms all necessary agents were involved
+- Validates execution order
+- Identifies any unnecessary agent invocations
+
+### 3. Individual Node Evaluation
+Focuses on specific agent performance (example: Image Generation Agent).
+- Verifies individual agent execution
+- Checks specific agent functionality
+- Provides targeted performance insights
 
 ## Running Evaluations
 
@@ -10,35 +30,33 @@ From the project root directory, run:
 python -m src.evaluation.run_evaluation
 ```
 
-## What Gets Evaluated
+## Output Format
 
-1. **Task Completion**
-   - Whether all requested tasks were completed correctly
-   - If tasks were executed in logical order
-   - Quality of task execution
+The evaluation provides detailed scores and reasoning for each criterion:
 
-2. **Node Execution**
-   - Whether the right agents were involved
-   - If agent interactions made sense
-   - Efficiency of the workflow
-
-## Example Output
 ```
-🚀 Starting Evaluation Process
+Evaluation Results by Criteria
 ==============================
 
-1️⃣ Setting up test dataset...
-✓ Dataset ready with test case: Generate image with text overlay
+1️⃣ Task Completion Evaluation:
+   Score: 1.0
+   Analysis: All tasks completed successfully...
 
-[... evaluation steps ...]
+2️⃣ Node Execution Analysis:
+   Score: 1.0
+   Analysis: Agents executed in correct sequence...
 
-8️⃣ Quick Summary
-===============
-• Request: Generate an image of a sunset and add text 'Beautiful Evening'
-• Task Completion Score: 1.0
-• Node Execution Score: 1.0
-• Execution Time: 2.27 seconds
+3️⃣ Image Generation Node Check:
+   Score: 1.0
+   Analysis: Image Generation Agent called successfully...
 ```
+
+## Implementation Details
+
+- Uses GPT-4 as evaluation judge
+- Provides scores from 0.0 to 1.0
+- Includes detailed reasoning for each score
+- Stores results in LangSmith for tracking
 
 ## Components
 

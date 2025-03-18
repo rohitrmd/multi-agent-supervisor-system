@@ -1,3 +1,14 @@
+"""
+Multi-Agent System Evaluation Framework
+
+This module implements three key evaluation criteria:
+1. Task Completion: Evaluates if the entire multi-agent system completed the requested tasks correctly
+2. Node Execution Path: Analyzes if agents were executed in the correct sequence
+3. Individual Node Execution: Checks specific node/agent performance
+
+Each evaluator returns a score (0.0-1.0) and detailed reasoning.
+"""
+
 from typing import Dict
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_openai import ChatOpenAI
@@ -12,11 +23,13 @@ judge_llm = ChatOpenAI(
 
 async def evaluate_task_completion(run: Run, example: Example) -> Dict:
     """
-    Uses GPT-4 to evaluate if the workflow completed the requested tasks correctly.
+    Evaluation Criteria 1: Task Completion
     
-    Args:
-        run: Execution trace containing actual outputs
-        example: Test case containing expected behavior
+    Evaluates if the multi-agent system as a whole completed all requested tasks correctly.
+    Considers:
+    - All required tasks were completed
+    - Tasks were done in logical order
+    - Final output matches requirements
     """
     try:
         # Extract actual sequence from run outputs
@@ -76,7 +89,13 @@ async def evaluate_task_completion(run: Run, example: Example) -> Dict:
 
 async def check_node_execution(run: Run, example: Example) -> Dict:
     """
-    Uses GPT-4 to evaluate if the correct nodes/agents were executed in the workflow.
+    Evaluation Criteria 2: Node Execution Path
+    
+    Analyzes the sequence of agent executions to verify correct workflow.
+    Checks:
+    - All necessary agents were involved
+    - Agents executed in correct order
+    - No unnecessary agent invocations
     """
     try:
         judge_llm = ChatOpenAI(model="gpt-4", temperature=0)
@@ -139,7 +158,12 @@ async def check_node_execution(run: Run, example: Example) -> Dict:
 
 async def check_image_generation_node(run: Run, example: Example) -> Dict:
     """
-    Evaluates if the image generation node was called.
+    Evaluation Criteria 3: Individual Node Execution
+    
+    Example of individual node evaluation, focusing on Image Generation Agent.
+    Verifies:
+    - If the specific agent was called
+    - Simple binary check of agent involvement
     """
     try:
         judge_llm = ChatOpenAI(model="gpt-4", temperature=0)
